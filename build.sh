@@ -35,6 +35,7 @@ function build() {
     echo "incbin 'base-$BASEROM.gb'" > cfg.asm
     echo "rom_us: equ 10" >> cfg.asm
     echo "rom_jp: equ 11" >> cfg.asm
+    echo "rom_kgbc1eu: equ 20" >> cfg.asm
     echo "rom_type: equ rom_$BASEROM" >> cfg.asm
     
     while [ $# -gt 0 ]
@@ -60,6 +61,16 @@ build us vcancel "VCANCEL: equ 1" "INERTIA: equ 0"
 build us no-vcancel "VCANCEL: equ 0" "INERTIA: equ 0"
 build us inertia-vcancel "VCANCEL: equ 1" "INERTIA: equ 1"
 build us inertia-no-vcancel "VCANCEL: equ 0" "INERTIA: equ 1"
+
+build jp vcancel "VCANCEL: equ 1" "INERTIA: equ 0"
+build jp no-vcancel "VCANCEL: equ 0" "INERTIA: equ 0"
+build jp inertia-vcancel "VCANCEL: equ 1" "INERTIA: equ 1"
+build jp inertia-no-vcancel "VCANCEL: equ 0" "INERTIA: equ 1"
+
+build kgbc1eu vcancel "VCANCEL: equ 1" "INERTIA: equ 0"
+build kgbc1eu no-vcancel "VCANCEL: equ 0" "INERTIA: equ 0"
+build kgbc1eu inertia-vcancel "VCANCEL: equ 1" "INERTIA: equ 1"
+build kgbc1eu inertia-no-vcancel "VCANCEL: equ 0" "INERTIA: equ 1"
 
 cp README.txt "$DST"
 

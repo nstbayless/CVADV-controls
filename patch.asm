@@ -39,38 +39,147 @@ banksk3: macro
     seek $4000 * (3-1) + $
 endm
 
+banksk4: macro
+    seek $4000 * (4-1) + $
+endm
+
+banksk5: macro
+    seek $4000 * (5-1) + $
+endm
+
 ; belmont action jump table -- $1833
 
-org $173C
-belmont_default_speed:
+if rom_type == rom_us
+    bankskA: macro
+        banksk0
+    endm
+    
+    bankB: equ 1
+    bankskB: macro
+        banksk1
+    endm
+    
+    bankC: equ 3
+    bankskC: macro
+        banksk3
+    endm
+    
+    org $173C
+    belmont_default_speed:
 
-org $1833 + 1*2
-banksk0
-dw new_belmont_jump_routine
+    org $1833
+    belmont_jump_table:
+    
+    org $1823
+    belmont_update_pretable:
 
-org $1833 + 4*2
-banksk0
-dw new_belmont_jump_routine
+    org $197c
+    old_belmont_jump_routine:
 
-org $17e1
-banksk0
-if INERTIA
-    call belmont_update_intercept
+    org $1af0
+    old_belmont_whip_routine:
+    
+    ; push routine address
+    ; a <- bank to switch to
+    org $2A82
+    mbc_bank_switch:
 endif
 
-org $1823
-belmont_update_pretable:
+if rom_type == rom_jp
+    bankskA: macro
+        banksk0
+    endm
+    
+    bankB: equ 1
+    bankskB: macro
+        banksk1
+    endm
+    
+    bankC: equ 3
+    bankskC: macro
+        banksk3
+    endm
+    
+    org $1718
+    belmont_default_speed:
+    
+    org $17fc
+    belmont_jump_table:
+    
+    org $17ec
+    belmont_update_pretable:
 
-org $197c
-old_belmont_jump_routine:
+    org $1945
+    old_belmont_jump_routine:
 
-org $1af0
-old_belmont_whip_routine:
+    org $1ab9
+    old_belmont_whip_routine:
+    
+    ; push routine address
+    ; a <- bank to switch to
+    org $2A4B
+    mbc_bank_switch:
+endif
 
-; push routine address
-; a <- bank to switch to
-org $2A82
-mbc_bank_switch:
+if rom_type == rom_kgbc1eu
+    bankskA: macro
+        banksk4
+    endm
+    
+    bankB: equ 4
+    bankskB: macro
+        banksk4
+    endm
+    
+    bankC: equ 5
+    bankskC: macro
+        banksk5
+    endm
+    
+    org $4C39
+    belmont_default_speed:
+    
+    org $4DC2
+    belmont_jump_table:
+    
+    org $4Db2
+    belmont_update_pretable:
+
+    org $4f0b
+    old_belmont_jump_routine:
+
+    org $507f
+    old_belmont_whip_routine:
+    
+    ; push routine address
+    ; a <- bank to switch to
+    org $0A64
+    mbc_bank_switch:
+endif
+
+org belmont_jump_table + 1*2
+bankskA
+dw new_belmont_jump_routine
+
+org belmont_jump_table + 4*2
+bankskA
+dw new_belmont_jump_routine
+
+if INERTIA
+    if rom_type == rom_us
+        org $17e1
+    endif
+    if rom_type == rom_jp
+        org $17aa
+    endif
+    bankskA
+    if rom_type == rom_kgbc1eu
+        org $4d70
+        bankskB
+    endif
+    
+    call belmont_update_intercept
+endif
 
 org $C418
 user_input:
@@ -104,7 +213,7 @@ belmont_inertia: ; hopefully we can use this freely.
 
 ; free space
 org $7FBD
-banksk1
+bankskB
 
 new_belmont_jump_routine:
     ; check actually jumping
@@ -117,16 +226,15 @@ new_belmont_jump_routine:
 if INERTIA
     ldai16 belmont_default_speed
     ld e, a
-    ; ldai16 belmont_default_speed+1
-    ; ld d, a
-    ld d, $0
+    ldai16 belmont_default_speed+3
+    ld d, a
 endif
     
     ; execute jump routine
     ld hl, new_belmont_jump_routine_exec
 jp_mbc_bank_switch3:
     push hl
-    ld a, $3
+    ld a, bankC
     jp mbc_bank_switch
 
 new_belmont_jump_routine_return:
@@ -156,13 +264,13 @@ end_bank1:
 
 ; free space in bank 3
 org $7d54
-banksk3
+bankskC
 
 if INERTIA
     belmont_update_intercept_exec:
         call get_desired_inertia
         ldi16a belmont_inertia
-        ld a, $1
+        ld a, bankB
         jp mbc_bank_switch
 
     get_desired_inertia:
@@ -225,6 +333,8 @@ if INERTIA
         
     inertia_adjust:
         ldai16 belmont_inertia
+        or a
+        call z, reset_belmont_inertia
         ld c, a
         
         sub b
@@ -325,7 +435,7 @@ endif
 
 new_belmont_jump_routine_exec_return:
     pushhl new_belmont_jump_routine_return
-    ld a, $1
+    ld a, bankB
     jp mbc_bank_switch
 
 if INERTIA
@@ -358,6 +468,11 @@ if INERTIA
         ld d, h
         ld e, l
         pop af
+        ret
+            
+    reset_belmont_inertia:
+        ld a, INERTIA_ZERO
+        ldi16a belmont_inertia
         ret
 endif
 
