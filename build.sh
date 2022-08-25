@@ -58,6 +58,8 @@ function build() {
 
 build us vcancel "VCANCEL: equ 1" "INERTIA: equ 0"
 build us no-vcancel "VCANCEL: equ 0" "INERTIA: equ 0"
+build us inertia-vcancel "VCANCEL: equ 1" "INERTIA: equ 1"
+build us inertia-no-vcancel "VCANCEL: equ 0" "INERTIA: equ 1"
 
 cp README.txt "$DST"
 
