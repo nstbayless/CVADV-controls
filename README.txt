@@ -13,12 +13,13 @@ patch does not modify the checksum, but if you so desire you may wish to correct
 
 ## Functionality
 
-This hack adjusts Christopher Belmont's control scheme to be more like Mega Man, Super Mario, or Symphony of the Night.
+This hack adjusts Christopher Belmont's control scheme to be more like Mega Man, Super Mario, Symphony of the Night, or Castlevania: Legends.
 
 - Belmont can now turn around and stop in mid-air.
 - Belmont regains control during knockback.
 - (vcancel patches only!) When the jump button is released, Belmont immediately starts falling again; this allows the player to make smaller hops if desired.
 - (inertia patches only!) When adjusting velocity in mid-air, Belmont only accelerates slowly (rather than changing direction instantaneously).
+- Belmont blinks rapidly when struck, as in Castlevania II: Belmont's Revenge.
 
 ## Compatability with other hacks
 

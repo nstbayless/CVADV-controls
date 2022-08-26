@@ -5,6 +5,9 @@ INERTIA_MAX: equ $C0
 ; this is the acceleration.
 INERTIA_ADJUST: equ $8
 
+; this can be any power of 2. Lower is faster.
+BLINK_RATE: equ $2
+
 ; z80asm seems to have trouble emitting ld a, ($imm) for some reason.
 ldai16: macro addr
     db $FA
@@ -64,6 +67,12 @@ if rom_type == rom_us
         banksk3
     endm
     
+    org $0A00
+    oam_update_callsite:
+    
+    org $15A4
+    oam_update:
+    
     org $173C
     belmont_default_speed:
 
@@ -78,6 +87,9 @@ if rom_type == rom_us
 
     org $1af0
     old_belmont_whip_routine:
+    
+    org $161A
+    draw_routine_intercept:
     
     ; push routine address
     ; a <- bank to switch to
@@ -100,7 +112,13 @@ if rom_type == rom_jp
         banksk3
     endm
     
-    org $1718
+    org $0A00
+    oam_update_callsite:
+    
+    org $156D
+    oam_update:
+    
+    org $1705
     belmont_default_speed:
     
     org $17fc
@@ -136,6 +154,12 @@ if rom_type == rom_kgbc1eu
         banksk5
     endm
     
+    org $4637
+    oam_update_callsite:
+    
+    org $4A99
+    oam_update:
+    
     org $4C39
     belmont_default_speed:
     
@@ -165,6 +189,12 @@ org belmont_jump_table + 4*2
 bankskA
 dw new_belmont_jump_routine
 
+if BLINKING
+org oam_update_callsite
+bankskA
+call oam_update_intercept
+endif
+
 if INERTIA
     if rom_type == rom_us
         org $17e1
@@ -184,6 +214,9 @@ endif
 org $C418
 user_input:
 
+org $C423
+belmont_iframes:
+
 org $C502
 belmont_state: ; 0: standing. 1: jump. 2: crouch. 3: rope. 4: whip.
 
@@ -202,6 +235,9 @@ belmont_yvel_sub:
 org $C510
 belmont_yvel:
 
+org $C512
+belmont_ypos:
+
 org $C514
 belmont_pose: ; 1: standing. 2: jump/crouch. 3: whip. 5: crouch-whip.
 
@@ -216,12 +252,6 @@ org $7FBD
 bankskB
 
 new_belmont_jump_routine:
-    ; check actually jumping
-    ldai16 belmont_state
-    ld b, a
-    ldai16 belmont_jumpstate
-    or a
-    jr z, new_belmont_jump_routine_return
     
 if INERTIA
     ldai16 belmont_default_speed
@@ -236,14 +266,6 @@ jp_mbc_bank_switch3:
     push hl
     ld a, bankC
     jp mbc_bank_switch
-
-new_belmont_jump_routine_return:
-    ; now do normal update routine
-
-    ld a, b
-    cp $4
-    jp z, old_belmont_whip_routine
-    jp old_belmont_jump_routine
     
 if INERTIA
     belmont_update_intercept:
@@ -258,6 +280,25 @@ if INERTIA
         ld hl, belmont_update_intercept_exec
         jr jp_mbc_bank_switch3
 endif
+
+if BLINKING
+oam_update_intercept:
+    ldai16 belmont_ypos
+    push af
+    
+    ldai16 belmont_iframes
+    and BLINK_RATE
+    jr z, _do_call_oam
+    ld a, $FF
+    ldi16a belmont_ypos
+    
+_do_call_oam:
+    call oam_update
+    
+    pop af
+    ldi16a belmont_ypos
+    ret
+endif
     
 end_bank1:
 
@@ -268,8 +309,21 @@ bankskC
 
 if INERTIA
     belmont_update_intercept_exec:
+    
+        ; skip this if in rising knockback.
+        ldai16 belmont_pose
+        cp $7
+        jr z, _do
+        
+        ldai16 belmont_jumpstate
+        cp $F
+        jr z, belmont_update_intercept_exec_return
+        
+    _do:
         call get_desired_inertia
         ldi16a belmont_inertia
+        
+    belmont_update_intercept_exec_return:
         ld a, bankB
         jp mbc_bank_switch
 
@@ -286,6 +340,28 @@ if INERTIA
 endif
 
 new_belmont_jump_routine_exec:
+
+    ldai16 belmont_state
+    ld b, a
+
+    ; check actually jumping
+    ldai16 belmont_jumpstate
+    ld h, a
+    or a
+    jp z, new_belmont_jump_routine_exec_return
+
+knockback_check:
+    ; don't do special jump routine if knockback and rising.
+    ldai16 belmont_pose
+    cp $7
+    jr nz, skip_knockback_check
+    
+    ld a, h; a <- belmont jumpstate
+    cp $F
+    jp z, new_belmont_jump_routine_exec_return
+    
+skip_knockback_check:
+
     ld hl, belmont_movement
     
     ; read input
@@ -308,6 +384,11 @@ set_facing:
     cp $4
     jr z, done_hmove
     
+    ; check not in knockback
+    ldai16 belmont_pose
+    cp $7
+    jr z, done_hmove
+    
 do_set_facing:
     ; copy bit 0 of belmont_movement to bit 5 of belmont_facing
     bit 0, (hl)
@@ -321,6 +402,7 @@ done_hmove:
 if INERTIA
         push bc
     inertia:
+    
         ; b <- desired velocity
         ld hl, belmont_movement
         ld b, INERTIA_ZERO
@@ -434,7 +516,18 @@ if VCANCEL
 endif
 
 new_belmont_jump_routine_exec_return:
-    pushhl new_belmont_jump_routine_return
+    ld a, b
+    cp $4
+    jr nz, new_belmont_jump_routine_exec_return_jump
+    
+new_belmont_jump_routine_exec_return_whip:
+    pushhl old_belmont_whip_routine
+    jr jp_mbc_bank_switchB
+    
+new_belmont_jump_routine_exec_return_jump:
+    pushhl old_belmont_jump_routine
+    
+jp_mbc_bank_switchB:
     ld a, bankB
     jp mbc_bank_switch
 

@@ -57,20 +57,20 @@ function build() {
     cp "$BUILDNAME.ips" "$DST/$BASEROM"
 }
 
-build us vcancel "VCANCEL: equ 1" "INERTIA: equ 0"
-build us no-vcancel "VCANCEL: equ 0" "INERTIA: equ 0"
-build us inertia-vcancel "VCANCEL: equ 1" "INERTIA: equ 1"
-build us inertia-no-vcancel "VCANCEL: equ 0" "INERTIA: equ 1"
+build us vcancel "VCANCEL: equ 1" "INERTIA: equ 0" "BLINKING: equ 1"
+build us no-vcancel "VCANCEL: equ 0" "INERTIA: equ 0" "BLINKING: equ 1"
+build us inertia-vcancel "VCANCEL: equ 1" "INERTIA: equ 1" "BLINKING: equ 1"
+build us inertia-no-vcancel "VCANCEL: equ 0" "INERTIA: equ 1" "BLINKING: equ 1"
 
-build jp vcancel "VCANCEL: equ 1" "INERTIA: equ 0"
-build jp no-vcancel "VCANCEL: equ 0" "INERTIA: equ 0"
-build jp inertia-vcancel "VCANCEL: equ 1" "INERTIA: equ 1"
-build jp inertia-no-vcancel "VCANCEL: equ 0" "INERTIA: equ 1"
+build jp vcancel "VCANCEL: equ 1" "INERTIA: equ 0" "BLINKING: equ 1"
+build jp no-vcancel "VCANCEL: equ 0" "INERTIA: equ 0" "BLINKING: equ 1"
+build jp inertia-vcancel "VCANCEL: equ 1" "INERTIA: equ 1" "BLINKING: equ 1"
+build jp inertia-no-vcancel "VCANCEL: equ 0" "INERTIA: equ 1" "BLINKING: equ 1"
 
-build kgbc1eu vcancel "VCANCEL: equ 1" "INERTIA: equ 0"
-build kgbc1eu no-vcancel "VCANCEL: equ 0" "INERTIA: equ 0"
-build kgbc1eu inertia-vcancel "VCANCEL: equ 1" "INERTIA: equ 1"
-build kgbc1eu inertia-no-vcancel "VCANCEL: equ 0" "INERTIA: equ 1"
+build kgbc1eu vcancel "VCANCEL: equ 1" "INERTIA: equ 0" "BLINKING: equ 1"
+build kgbc1eu no-vcancel "VCANCEL: equ 0" "INERTIA: equ 0" "BLINKING: equ 1"
+build kgbc1eu inertia-vcancel "VCANCEL: equ 1" "INERTIA: equ 1" "BLINKING: equ 1"
+build kgbc1eu inertia-no-vcancel "VCANCEL: equ 0" "INERTIA: equ 1" "BLINKING: equ 1"
 
 cp README.txt "$DST"
 
